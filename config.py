@@ -1,10 +1,13 @@
 # colours
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-GREY = (127, 127, 127)
+LIGHT_GREY = (210, 210, 210)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+
+# background
+BACKGROUND_COLOR = WHITE
 
 # screen dimensions
 SCREEN_WIDTH = 1250
@@ -17,10 +20,18 @@ GRID_COLS = 8
 GRID_PADDING = 1
 
 # button configurations
-BUTTON_WIDTH = 40
-BUTTON_HEIGHT = 40
+BUTTON_WIDTH = 50
+BUTTON_HEIGHT = 50
 BUTTON_SIZE = (BUTTON_WIDTH, BUTTON_HEIGHT)
+
+# grid dimensions
+GRID_WIDTH = BUTTON_WIDTH * GRID_COLS + GRID_PADDING * (GRID_COLS - 1)
+GRID_HEIGHT = BUTTON_HEIGHT * GRID_ROWS + GRID_PADDING * (GRID_ROWS - 1)
+
+# button states
+BUTTON_NORMAL = 'normal'
+BUTTON_CLICKED = 'clicked'
 
 # offset for grid placement
 GRID_OFFSET_X = 100
-GRID_OFFSET_Y = 50
+GRID_OFFSET_Y = 100
