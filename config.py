@@ -1,0 +1,26 @@
+# colours
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREY = (127, 127, 127)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+# screen dimensions
+SCREEN_WIDTH = 1250
+SCREEN_HEIGHT = 750
+SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
+
+# grid configurations
+GRID_ROWS = 10
+GRID_COLS = 10
+GRID_PADDING = 1
+
+# button configurations
+BUTTON_WIDTH = 40
+BUTTON_HEIGHT = 40
+BUTTON_SIZE = (BUTTON_WIDTH, BUTTON_HEIGHT)
+
+# offset for grid placement
+GRID_OFFSET_X = 50
+GRID_OFFSET_Y = 50
