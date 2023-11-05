@@ -3,7 +3,6 @@ import sys
 import config
 import qiskit as qk
 from pygame.locals import *
-#from frontend import *
 from utils import *
 
 qc = generate_board(8, 12, 1)

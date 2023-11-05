@@ -1,20 +1,13 @@
 import random
 import numpy as np
 from qiskit import QuantumCircuit, QuantumRegister, transpile, execute, Aer, ClassicalRegister
-
-from qiskit.visualization import plot_bloch_multivector
-from qiskit.tools.visualization import plot_histogram
-
 import pygame
-import sys
 import config
 from qiskit import BasicAer, IBMQ
 from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit
 import qiskit as qk
 from pygame.locals import *
-#from frontend import *
 from utils import *
-import math
 
 def load_images():
     """Loads and transforms images to be used in the game."""
