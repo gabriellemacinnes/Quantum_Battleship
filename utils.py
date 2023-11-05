@@ -78,24 +78,30 @@ def generate_board(dim, ships, boards):
     m = []
     for i in range(dim*dim):
         random_number = random.uniform(0, min(boards - boards/3 , target - current ))
+        if i == 1:
+            random_number = 0
         m.append(random_number / boards)
         current += random_number
-    random.shuffle(m)
+    b = m[:2]
+    a = m[2:]
+    random.shuffle(a)
+    m = b + a
+   
 
-    qr = QuantumRegister(dim*dim, 'q')
-    cr = ClassicalRegister(dim*dim, 'c')
-    circuit = QuantumCircuit(qr, cr)
+    board = []
+
 
     for i in range(dim):
+        qr = QuantumRegister(dim, 'q')
+        cr = ClassicalRegister(dim, 'c')
+        circuit = QuantumCircuit(qr, cr)
         for j in range(dim):
             prob_0 = m[i*dim + j]
             amplitude_0 = np.sqrt(1 - prob_0)
             amplitude_1 = np.sqrt(prob_0)
-            circuit.initialize([amplitude_0, amplitude_1], qr[i*dim + j])
-            print(qr[i*dim + j])
+            circuit.initialize([amplitude_0, amplitude_1], qr[j])
             
     return circuit
-
 
 
 def get_heat_map_color(probability):
