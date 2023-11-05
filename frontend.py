@@ -17,7 +17,12 @@ def load_images():
     sea_image = pygame.transform.scale(pygame.image.load("assets/images/sea.png"), (sea_image_width, sea_image_height))
     background_image = pygame.image.load("assets/images/background.png")
     background_image = pygame.transform.scale(background_image, (config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-    return target_image, sea_image, background_image
+    scroll_image = pygame.image.load("assets/images/scroll.png")
+    scroll_image_rect = scroll_image.get_rect()
+    scroll_image_width = int(scroll_image_rect.width * 1.8)
+    scroll_image_height = int(scroll_image_rect.height * 1.2)
+    scroll_image = pygame.transform.scale(scroll_image, (scroll_image_width, scroll_image_height))
+    return target_image, sea_image, background_image, scroll_image
 
 def create_overlay(size, alpha, colour):
     """Creates a translucent overlay surface."""
@@ -40,15 +45,15 @@ def draw_indices(surface, offset_x, offset_y, font):
         letter = chr(65 + i)  # Converts number to capital letter (A-J)
         text_surf = font.render(letter, True, config.BLACK)
         # Centering the letter in the middle of the block
-        text_rect = text_surf.get_rect(center=(offset_x + i * (config.BUTTON_WIDTH + config.GRID_PADDING) + config.BUTTON_WIDTH / 2, offset_y + config.GRID_ROWS * (config.BUTTON_HEIGHT + config.GRID_PADDING) + 20))
+        text_rect = text_surf.get_rect(center=(offset_x + i * (config.BUTTON_WIDTH + config.GRID_PADDING) + config.BUTTON_WIDTH / 2, offset_y - 19))
         surface.blit(text_surf, text_rect.topleft)
 
     # Draw Y-axis indices (numbers)
     for i in range(config.GRID_ROWS):
-        number = str(config.GRID_ROWS - i)
+        number = str(i + 1)
         text_surf = font.render(number, True, config.BLACK)
         # Centering the number at the start of the row
-        text_rect = text_surf.get_rect(center=(offset_x - 20, offset_y + i * (config.BUTTON_HEIGHT + config.GRID_PADDING) + config.BUTTON_HEIGHT / 2))
+        text_rect = text_surf.get_rect(center=(offset_x - 21, offset_y + i * (config.BUTTON_HEIGHT + config.GRID_PADDING) + config.BUTTON_HEIGHT / 2))
         surface.blit(text_surf, text_rect.topleft)
 
 def create_grid_buttons(offset_x, offset_y):
@@ -64,10 +69,91 @@ def create_grid_buttons(offset_x, offset_y):
             }
     return buttons
 
-def main():
+def main_menu(screen):
+    """Displays the main menu with custom buttons for starting the game or viewing instructions."""
+    # Load images
+    _, _, background_image, scroll_image = load_images()
+    
+
+    # Define the fonts
+    title_font = pygame.font.Font(None, 100)
+    subtitle_font = pygame.font.Font(None, 50)
+    button_font = pygame.font.Font(None, 30)
+
+    # Create the title and subtitle surfaces with the specified color
+    title_colour = pygame.Color("#CC5C42")
+    title_surface = title_font.render('Quantum Battleships', True, title_colour)
+    subtitle_surface = subtitle_font.render('Presented by Team BREAD', True, config.DARK_GREY)
+
+    # Position the scroll image and get its rect
+    scroll_rect = scroll_image.get_rect(center=(config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 3.5))
+
+    # Position the title and subtitle on the scroll
+    title_rect = title_surface.get_rect(center=(scroll_rect.centerx, scroll_rect.centery - 20))
+    subtitle_rect = subtitle_surface.get_rect(center=(scroll_rect.centerx, scroll_rect.centery + 35))
+
+    # Calculate the position of the buttons to be below the scroll image
+    button_y = scroll_rect.bottom + 50  # Position buttons 50 pixels below the scroll
+    button_size = (200, 60)
+
+    # Define buttons with their colors and initial positions
+    buttons = {
+        'start': {
+            'color': config.DARK_GREY,
+            'rect': pygame.Rect((config.SCREEN_WIDTH // 2 - button_size[0] // 2, button_y), button_size),
+            'text': 'Start Game',
+            'action': lambda: main(screen),
+        },
+        'instructions': {
+            'color': config.DARK_GREY,
+            'rect': pygame.Rect((config.SCREEN_WIDTH // 2 - button_size[0] // 2, button_y + button_size[1] + 10), button_size),
+            'text': 'Instructions',
+            'action': lambda: print("Show instructions here."),  # Placeholder for instructions logic
+        }
+    }
+
+    # Initialize the clock for controlling frame rate
+    clock = pygame.time.Clock()
+    is_running = True
+
+    while is_running:
+        time_delta = clock.tick(60) / 1000.0
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                is_running = False
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                mouse_pos = event.pos
+                for button_key, button_props in buttons.items():
+                    if button_props['rect'].collidepoint(mouse_pos):
+                        button_props['action']()  # Call the button's action
+                        is_running = False  # Assume that we want to close the menu after a button press
+
+        # Drawing the background
+        screen.blit(background_image, (0, 0))
+        # Drawing the scroll
+        screen.blit(scroll_image, scroll_rect)
+        # Drawing the title and subtitle on top of the scroll
+        screen.blit(title_surface, title_rect)
+        screen.blit(subtitle_surface, subtitle_rect)
+
+        # Draw custom buttons
+        for button_key, button_props in buttons.items():
+            draw_button(screen, button_props['color'], button_props['rect'].topleft, button_props['rect'].size)
+            text_surf = button_font.render(button_props['text'], True, config.LIGHT_GREY)
+            text_rect = text_surf.get_rect(center=button_props['rect'].center)
+            screen.blit(text_surf, text_rect)
+
+        # Update the screen
+        pygame.display.update()
+
+    pygame.quit()
+    sys.exit()
+
+def main(screen):
     # Set up the display, load images, and create the grid
-    screen = init_pygame()
-    target_image, sea_image, background_image = load_images()
+    target_image, sea_image, background_image, _ = load_images()
     target_image_rect = target_image.get_rect()
     font = pygame.font.Font(None, 24)
 
@@ -136,4 +222,5 @@ def main():
 
 # Run the game
 if __name__ == "__main__":
-    main()
+    screen = init_pygame()
+    main_menu(screen)

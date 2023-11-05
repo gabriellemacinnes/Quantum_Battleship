@@ -1,7 +1,8 @@
 # colours
-WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+DARK_GREY = (70, 70, 70)
 LIGHT_GREY = (210, 210, 210)
+WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
