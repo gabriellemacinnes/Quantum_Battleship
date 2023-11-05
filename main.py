@@ -5,7 +5,7 @@ import qiskit as qk
 from pygame.locals import *
 from utils import *
 
-qc = generate_board(8, 12, 1)
+qc = generate_board(8, 18, 1)
 shots = 1024
 
 def init_pygame():
