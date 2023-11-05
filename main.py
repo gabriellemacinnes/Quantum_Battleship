@@ -5,10 +5,8 @@ import qiskit as qk
 from pygame.locals import *
 from utils import *
 
-qc = []
-for _ in range(8):
-    qc.append(QuantumCircuit(8,8))
-#qc = generate_board(8, 12, 1)
+qc = generate_board(8, 12, 1)
+shots = 1024
 
 def init_pygame():
     """Initializes Pygame and creates the game screen."""
@@ -19,30 +17,29 @@ def init_pygame():
 
 def classic(pos):
     x, y = pos
-    circ = qc[y]
-    circ.measure(x, x)
+    circ = qc[x]
+    circ.measure(y, y)
     simulator = qk.Aer.get_backend('qasm_simulator')
     result = qk.execute(circ, simulator, shots=1).result()
     counts = result.get_counts(circ)
     for key in counts:
-        return int(key)
+        return int(key[y])
  
-def get_prob(position):
-    x, y = position
-    circuit = qc[y]
-    circuit.measure(x, x)
+def get_prob(row):
+    circuit = qc[row]
+    circuit.measure_all()
     simulator = qk.Aer.get_backend('qasm_simulator')
     result = qk.execute(circuit, simulator, shots=1024).result()
     counts = result.get_counts(circuit)
-    prob = [0, 0]
+    prob = [0 for _ in range(8)]
     for key in counts:
-        if int(key) == 1:
-            prob[0] = counts[key]
-            prob[1] += counts[key]
-        elif int(key) == 0:
-            prob[1] += counts[key]
-    p = str(round(100 * prob[0]/prob[1]))
-    return p
+        for k in range(8):
+            if int(key[k]) == 1:
+                prob[k] += counts[key]
+    for k in range(8):
+
+        prob[k] = str(round(100 * prob[k]/shots))
+    return prob
 
 def main_menu(screen):
     """Displays the main menu with custom buttons for starting the game or viewing instructions."""
@@ -126,10 +123,11 @@ def main_menu(screen):
     sys.exit()
 
 def main(screen):
-    # Set up the display, load images, and create the grid
+   # Set up the display, load images, and create the grid
     target_image, sea_image, background_image, _, quote_image = load_images()
     target_image_rect = target_image.get_rect()
     font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 16)
+    font.set_bold(True)
 
     # Create overlays
     event_string_background = create_overlay((config.GRID_WIDTH + 80, 40), 150, config.LIGHT_GREY)
@@ -148,11 +146,14 @@ def main(screen):
     current_pos = [0, 0]
     discovered = set()  # Keep track of discovered squares
     torpedo = 0  # classic = 0, quantum = 1
-    probabilities = [[get_prob((x, y)) for x in range(8)]for y in range(8)]
+    probabilities = [get_prob(y) for y in range(8)]
+    probabilities_snapshot = probabilities.copy()
     prob_display = [[False for x in range(8)] for y in range(8)]
+    shots_fired, ships_sunk = 0, 0
+    ship_state = [[-1 for _ in range(8)] for _ in range(8)]
 
     while running:
-        # Blit images and overlays
+         # Blit images and overlays
         screen.blit(background_image, (0, 0))
         screen.blit(event_string_background, (config.GRID_OFFSET_X - 40, config.GRID_OFFSET_Y - 120))
         screen.blit(heat_map_toggle_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 120))
@@ -162,22 +163,65 @@ def main(screen):
         screen.blit(heat_map_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 40))
         screen.blit(sea_image, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y))
 
-        # Draw the "Probability Heat Map Display:" text
-        font.set_bold(True)
-        heat_map_text = font.render('Probability Heat Map Display:', True, config.SPECIAL_RED)
-        screen.blit(heat_map_text, (config.HEAT_MAP_OFFSET_X + 57, config.HEAT_MAP_OFFSET_Y - 112))
+        # Draw the home and reset toggles
+        # Define the scale factor and spacing
+        scale_factor = 2.05
+        button_spacing = 10
 
-        # Draw the toggle
-        toggle_text = font.render('ON' if display_heat_map else 'OFF', True, config.LIGHT_GREY)
-        font.set_bold(False)
-        toggle_rect = toggle_text.get_rect(center=(config.HEAT_MAP_OFFSET_X + 3 * config.GRID_WIDTH // 4 + 15, config.HEAT_MAP_OFFSET_Y - 100))
-        pygame.draw.rect(screen, config.DARK_GREY, toggle_rect.inflate(20, 8), border_radius=8)  # Inflating the rect for visual padding
-        screen.blit(toggle_text, (toggle_rect.topleft[0], toggle_rect.topleft[1] - 1))
+        # Get the original home button dimensions and text
+        home_toggle_text = font.render('HOME', True, config.LIGHT_GREY)
+        home_toggle_rect_original = home_toggle_text.get_rect(center=(config.HEAT_MAP_OFFSET_X + 80, config.HEAT_MAP_OFFSET_Y - 142))
+
+        # Inflate the original rect for visual padding and get its size for reference
+        home_toggle_rect_padded = home_toggle_rect_original.inflate(20, 8)
+        original_width, original_height = home_toggle_rect_padded.size
+
+        # Calculate new width using the scale factor, keeping the height the same
+        new_width = original_width * scale_factor
+
+        # Create new rects for the buttons, keeping the height of the original rect
+        home_toggle_rect = pygame.Rect(home_toggle_rect_original.left, home_toggle_rect_original.top, new_width, original_height)
+        reset_toggle_rect = pygame.Rect(home_toggle_rect.right + button_spacing, home_toggle_rect.top, new_width, original_height)
+
+        # Create and position the reset button text
+        reset_toggle_text = font.render('RESET', True, config.LIGHT_GREY)
+        reset_toggle_rect.center = reset_toggle_rect.center  # Re-center the text in the new rect
+
+        # Draw the HOME button
+        pygame.draw.rect(screen, config.DARK_GREY, home_toggle_rect, border_radius=8)
+        # Calculate the top left position for the home text to be centered within its button
+        home_text_x = home_toggle_rect.x + (home_toggle_rect.width - home_toggle_text.get_width()) // 2
+        home_text_y = home_toggle_rect.y + (home_toggle_rect.height - home_toggle_text.get_height()) // 2
+        screen.blit(home_toggle_text, (home_text_x, home_text_y - 1))
+
+        # Draw the RESET button
+        pygame.draw.rect(screen, config.DARK_GREY, reset_toggle_rect, border_radius=8)
+        # Calculate the top left position for the reset text to be centered within its button
+        reset_text_x = reset_toggle_rect.x + (reset_toggle_rect.width - reset_toggle_text.get_width()) // 2
+        reset_text_y = reset_toggle_rect.y + (reset_toggle_rect.height - reset_toggle_text.get_height()) // 2
+        screen.blit(reset_toggle_text, (reset_text_x, reset_text_y - 1))
+
+        # Draw the "Probability Heat Map Display:" text
+        heat_map_text = font.render('Probability Heat Map Display:', True, config.SPECIAL_RED)
+        screen.blit(heat_map_text, (config.HEAT_MAP_OFFSET_X + 57, config.HEAT_MAP_OFFSET_Y - 114))
+
+        # Draw the heat map toggle
+        heat_map_toggle_text = font.render('ON' if display_heat_map else 'OFF', True, config.LIGHT_GREY)
+        heat_map_toggle_rect = heat_map_toggle_text.get_rect(center=(config.HEAT_MAP_OFFSET_X + 3 * config.GRID_WIDTH // 4 + 15, config.HEAT_MAP_OFFSET_Y - 102))
+        pygame.draw.rect(screen, config.DARK_GREY, heat_map_toggle_rect.inflate(20, 8), border_radius=8)  # Inflating the rect for visual padding
+        screen.blit(heat_map_toggle_text, (heat_map_toggle_rect.topleft[0], heat_map_toggle_rect.topleft[1] - 1))
+
+        # Draw the "Shots Fired:" text
+        shots_fired_text = font.render('Shots Fired:', True, config.BLACK)
+        screen.blit(shots_fired_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 152))
 
         # Draw the "Ships Sunk:" text
-        font.set_bold(True)
-        heat_map_text = font.render('Ships Sunk:', True, config.BLACK)
-        screen.blit(heat_map_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 152))
+        ships_sunk_text = font.render('Ships Sunk:', True, config.BLACK)
+        screen.blit(ships_sunk_text, (config.GRID_OFFSET_X + 140, config.GRID_OFFSET_Y - 152))
+
+        # Draw the "ESR Range:" text
+        esr_range_text = font.render('ESR Range:', True, config.BLACK)
+        screen.blit(esr_range_text, (config.GRID_OFFSET_X + 280, config.GRID_OFFSET_Y - 152))
 
         # Event handling
         for event in pygame.event.get():
@@ -194,6 +238,7 @@ def main(screen):
                     current_pos[0] = min(current_pos[0] + 1, config.GRID_ROWS - 1 - torpedo)
                 elif event.key == pygame.K_RETURN:
                     if torpedo == 1:
+                        shots_fired += 1
                         x, y = current_pos
                         squares = [(x, y), (x+1, y), (x, y+1), (x+1, y+1)]
                         for s in squares:
@@ -205,12 +250,18 @@ def main(screen):
                         pos_key = tuple(current_pos)
                         x, y = pos_key
                         if pos_key not in discovered:
+                            shots_fired += 1
                             discovered.add(pos_key)
                             grid_buttons[pos_key]['state'] = config.BUTTON_CLICKED
                             prob_display[x][y] = False
-                            
-                        # Update probabilities
-                        probabilities = [[get_prob((x, y)) for x in range(8)]for y in range(8)]
+                            state = classic(pos_key)
+                            if state == 1: #hit
+                                ships_sunk += 1
+                                probabilities[x][y] = 100 
+                                ship_state[x][y] = 1
+                            else: #miss
+                                probabilities[x][y] = 0
+                                ship_state[x][y] = 0
                 elif event.key == pygame.K_SPACE:
                     if torpedo == 0:
                         # update position to allow for expansion of target
@@ -228,9 +279,13 @@ def main(screen):
                         target_image = pygame.transform.scale(target_image, (new_width, new_height))
                         torpedo = 0
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if toggle_rect.collidepoint(event.pos):
+                if heat_map_toggle_rect.collidepoint(event.pos):
                     display_heat_map = not display_heat_map  # Toggle the heat map display
-        
+                elif home_toggle_rect.collidepoint(event.pos):
+                    main_menu(screen)
+                elif reset_toggle_rect.collidepoint(event.pos):
+                    main(screen)
+
         # Draw heat map or quote image based on the toggle
         if display_heat_map:
             # Your existing code to draw the heat map

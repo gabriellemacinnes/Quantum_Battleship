@@ -7,7 +7,6 @@ from qiskit import BasicAer, IBMQ
 from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit
 import qiskit as qk
 from pygame.locals import *
-from utils import *
 
 def load_images():
     """Loads and transforms images to be used in the game."""
@@ -41,7 +40,6 @@ def draw_button(surface, color, position, size):
 
 def draw_indices(surface, offset_x, offset_y, font):
     """Draws the grid indices on the surface."""
-
     # Draw X-axis indices (capital letters)
     for i in range(config.GRID_COLS):
         letter = chr(65 + i)  # Converts number to capital letter (A-J)
@@ -71,9 +69,8 @@ def create_grid_buttons(offset_x, offset_y):
             }
     return buttons
 
-#returns a generated board of qubits
-#returns a generated board of qubits
 def generate_board(dim, ships, boards):
+    """Returns a generated board of qubits."""
     target = ships*boards
     current = 0
     m = []
@@ -106,8 +103,6 @@ def generate_board(dim, ships, boards):
             board[0].cx(qr[0], qr[1])  
       
     return board
-
-
 
 def get_heat_map_color(probability):
     if probability == -1:
