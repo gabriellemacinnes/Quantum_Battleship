@@ -44,7 +44,7 @@ def get_prob(position):
 def main_menu(screen):
     """Displays the main menu with custom buttons for starting the game or viewing instructions."""
     # Load images
-    _, _, background_image, scroll_image = load_images()
+    _, _, background_image, scroll_image, _ = load_images()
     
     # Define the fonts
     title_font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 70)
@@ -53,8 +53,7 @@ def main_menu(screen):
     button_font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 20)
 
     # Create the title and subtitle surfaces with the specified color
-    title_colour = pygame.Color("#CC5C42")
-    title_surface = title_font.render('Quantum Battleships', True, title_colour)
+    title_surface = title_font.render('Quantum Battleships', True, config.SPECIAL_RED)
     subtitle_surface = subtitle_font.render('Presented by Team BREAD', True, config.DARK_GREY)
 
     # Position the scroll image and get its rect
@@ -125,34 +124,57 @@ def main_menu(screen):
 
 def main(screen):
     # Set up the display, load images, and create the grid
-    target_image, sea_image, background_image, _ = load_images()
+    target_image, sea_image, background_image, _, quote_image = load_images()
     target_image_rect = target_image.get_rect()
     font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 16)
 
-    # Create a translucent grey overlay for the grid
+    # Create overlays
+    event_string_background = create_overlay((config.GRID_WIDTH + 80, 40), 150, config.LIGHT_GREY)
+    heat_map_toggle_background = create_overlay((config.GRID_WIDTH + 80, 40), 150, config.LIGHT_GREY)
+    counts_background = create_overlay((config.GRID_WIDTH + 80, 40), 150, config.LIGHT_GREY)
+    settings_background = create_overlay((config.GRID_WIDTH + 80, 40), 150, config.LIGHT_GREY)
     grid_background = create_overlay((config.GRID_WIDTH + 80, config.GRID_HEIGHT + 80), 150, config.LIGHT_GREY)
-
-    # Create a translucent white overlay for the buttons
+    heat_map_background = create_overlay((config.GRID_WIDTH + 80, config.GRID_HEIGHT + 80), 150, config.LIGHT_GREY)
     button_overlay = create_overlay(config.BUTTON_SIZE, 175, config.BLACK)
 
     # Create grid buttons
     grid_buttons = create_grid_buttons(config.GRID_OFFSET_X, config.GRID_OFFSET_Y)
 
     running = True
+    display_heat_map = True
     current_pos = [0, 0]
     discovered = set()  # Keep track of discovered squares
     torpedo = 0  # classic = 0, quantum = 1
-    probabilities = [[-1 for _ in range(8)]for _ in range(8)] # keeps track of squares hit by quantum torpedoes
+    probabilities = [[get_prob((x, y)) for x in range(8)]for y in range(8)]
+    prob_display = [[False for x in range(8)] for y in range(8)]
 
     while running:
-        # Blit the full background image
+        # Blit images and overlays
         screen.blit(background_image, (0, 0))
-
-        # Blit the translucent grey background for the grid onto the screen
+        screen.blit(event_string_background, (config.GRID_OFFSET_X - 40, config.GRID_OFFSET_Y - 120))
+        screen.blit(heat_map_toggle_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 120))
+        screen.blit(counts_background, (config.GRID_OFFSET_X - 40, config.GRID_OFFSET_Y - 160))
+        screen.blit(settings_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 160))
         screen.blit(grid_background, (config.GRID_OFFSET_X - 40, config.GRID_OFFSET_Y - 40))
-
-        # Blit the full sea image on the grid area
+        screen.blit(heat_map_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 40))
         screen.blit(sea_image, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y))
+
+        # Draw the "Probability Heat Map Display:" text
+        font.set_bold(True)
+        heat_map_text = font.render('Probability Heat Map Display:', True, config.SPECIAL_RED)
+        screen.blit(heat_map_text, (config.HEAT_MAP_OFFSET_X + 57, config.HEAT_MAP_OFFSET_Y - 112))
+
+        # Draw the toggle
+        toggle_text = font.render('ON' if display_heat_map else 'OFF', True, config.LIGHT_GREY)
+        font.set_bold(False)
+        toggle_rect = toggle_text.get_rect(center=(config.HEAT_MAP_OFFSET_X + 3 * config.GRID_WIDTH // 4 + 15, config.HEAT_MAP_OFFSET_Y - 100))
+        pygame.draw.rect(screen, config.DARK_GREY, toggle_rect.inflate(20, 8), border_radius=8)  # Inflating the rect for visual padding
+        screen.blit(toggle_text, (toggle_rect.topleft[0], toggle_rect.topleft[1] - 1))
+
+        # Draw the "Ships Sunk:" text
+        font.set_bold(True)
+        heat_map_text = font.render('Ships Sunk:', True, config.BLACK)
+        screen.blit(heat_map_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 152))
 
         # Event handling
         for event in pygame.event.get():
@@ -174,8 +196,7 @@ def main(screen):
                         for s in squares:
                             x1, y1 = s
                             if grid_buttons[s]['state'] == config.BUTTON_NORMAL:
-                                p = get_prob(s)
-                                probabilities[x1][y1] = p
+                                prob_display[x1][y1] = True
                     else:
                         # Convert the current position to a tuple for set operations and dict key
                         pos_key = tuple(current_pos)
@@ -183,7 +204,10 @@ def main(screen):
                         if pos_key not in discovered:
                             discovered.add(pos_key)
                             grid_buttons[pos_key]['state'] = config.BUTTON_CLICKED
-                            probabilities[x][y] = -1
+                            prob_display[x][y] = False
+                            
+                        # Update probabilities
+                        probabilities = [[get_prob((x, y)) for x in range(8)]for y in range(8)]
                 elif event.key == pygame.K_SPACE:
                     if torpedo == 0:
                         # update position to allow for expansion of target
@@ -200,8 +224,20 @@ def main(screen):
                         new_height = target_image.get_height() / 2
                         target_image = pygame.transform.scale(target_image, (new_width, new_height))
                         torpedo = 0
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if toggle_rect.collidepoint(event.pos):
+                    display_heat_map = not display_heat_map  # Toggle the heat map display
+        
+        # Draw heat map or quote image based on the toggle
+        if display_heat_map:
+            # Your existing code to draw the heat map
+            draw_heat_map(screen, probabilities, font)
+            draw_indices(screen, config.HEAT_MAP_OFFSET_X, config.HEAT_MAP_OFFSET_Y, font)
+        else:
+            # If the heat map is toggled off, draw the quote image instead
+            screen.blit(quote_image, (config.HEAT_MAP_OFFSET_X, config.HEAT_MAP_OFFSET_Y))
 
-        # Draw the indices for the grid
+        # Draw the indices for the grid and heat map
         draw_indices(screen, config.GRID_OFFSET_X, config.GRID_OFFSET_Y, font)
 
         # Draw the grid buttons
@@ -212,14 +248,14 @@ def main(screen):
                 screen.blit(button_overlay, button_rect.topleft)
 
         # Iterate over the grid positions
-        for y in range(8):
-            for x in range(8):
-                pos = (config.GRID_OFFSET_X + x * (config.BUTTON_WIDTH + config.GRID_PADDING),
-                        config.GRID_OFFSET_Y + y * (config.BUTTON_HEIGHT + config.GRID_PADDING))
+        for x in range(8):
+            for y in range(8):
+                pos = (config.GRID_OFFSET_X + y * (config.BUTTON_WIDTH + config.GRID_PADDING),
+                        config.GRID_OFFSET_Y + x * (config.BUTTON_HEIGHT + config.GRID_PADDING))
 
                 # Check if the probability is not -1
-                probability = probabilities[y][x]
-                if probability != -1:
+                probability = probabilities[x][y]
+                if prob_display[x][y]:
                     # Create a text surface with the probability
                     text = font.render(str(probability) + "%", True, config.LIGHT_GREY)
                     text_rect = text.get_rect()

@@ -19,10 +19,12 @@ def load_images():
     background_image = pygame.transform.scale(background_image, (config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
     scroll_image = pygame.image.load("assets/images/scroll.png")
     scroll_image_rect = scroll_image.get_rect()
-    scroll_image_width = int(scroll_image_rect.width * 1.8)
+    scroll_image_width = int(scroll_image_rect.width * 1.7)
     scroll_image_height = int(scroll_image_rect.height * 1.2)
     scroll_image = pygame.transform.scale(scroll_image, (scroll_image_width, scroll_image_height))
-    return target_image, sea_image, background_image, scroll_image
+    quote_image = pygame.image.load("assets/images/quote.png")
+    quote_image = pygame.transform.scale(quote_image, (config.GRID_WIDTH, config.GRID_HEIGHT))
+    return target_image, sea_image, background_image, scroll_image, quote_image
 
 def create_overlay(size, alpha, colour):
     """Creates a translucent overlay surface."""
@@ -69,7 +71,6 @@ def create_grid_buttons(offset_x, offset_y):
             }
     return buttons
 
-
 #returns a generated board of qubits
 def generate_board(dim, ships, boards):
     b = [[0 for _ in range(dim)] for _ in range(dim)]
@@ -92,3 +93,39 @@ def generate_board(dim, ships, boards):
             circuit.initialize([amplitude_0, amplitude_1], qr[0])
             b[i][j] = circuit
     return b
+
+def get_heat_map_color(probability):
+    if probability == -1:
+        return config.OCEAN_BLUE
+    elif probability < 25:
+        return config.COOL_BLUE
+    elif probability < 50:
+        return config.MILD_BLUE
+    elif probability < 75:
+        return config.WARM_BLUE
+    else:
+        return config.HOT_BLUE
+
+def draw_heat_map(screen, probabilities, font):
+    # Iterate over the grid positions to create the heat map
+    for y in range(8):
+        for x in range(8):
+            # Calculate the heat map position symmetrically to the grid
+            pos_x = config.HEAT_MAP_OFFSET_X + x * (config.BUTTON_WIDTH + config.GRID_PADDING)
+            pos_y = config.HEAT_MAP_OFFSET_Y + y * (config.BUTTON_HEIGHT + config.GRID_PADDING)
+            
+            # Get the current probability for this position
+            probability = int(probabilities[y][x])
+            
+            # Get the color for this probability
+            heat_map_color = get_heat_map_color(probability)
+            
+            # Draw the heat map square
+            heat_map_rect = pygame.Rect(pos_x, pos_y, config.BUTTON_WIDTH, config.BUTTON_HEIGHT)
+            pygame.draw.rect(screen, heat_map_color, heat_map_rect)
+            
+            # Optionally, draw the probability text over the heat map
+            if probability != -1:
+                text = font.render(f"{probability}%", True, config.DARK_GREY if probability > 50 else config.LIGHT_GREY)
+                text_rect = text.get_rect(center=(pos_x + config.BUTTON_WIDTH // 2, pos_y + config.BUTTON_HEIGHT // 2))
+                screen.blit(text, text_rect)

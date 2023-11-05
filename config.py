@@ -1,18 +1,28 @@
-# colours
+import pygame
+
+# general colours
 BLACK = (0, 0, 0)
 DARK_GREY = (70, 70, 70)
 LIGHT_GREY = (210, 210, 210)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
+SPECIAL_RED = pygame.Color("#CC5C42")
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+
+# heat map colours
+OCEAN_BLUE = (28, 107, 160)
+COOL_BLUE = (93, 173, 226)
+MILD_BLUE = (129, 212, 250)
+WARM_BLUE = (174, 228, 255)
+HOT_BLUE = (202, 240, 255)
 
 # background
 BACKGROUND_COLOR = WHITE
 
 # screen dimensions
-SCREEN_WIDTH = 1250
-SCREEN_HEIGHT = 750
+SCREEN_WIDTH = 1214
+SCREEN_HEIGHT = 687
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
 # grid configurations
@@ -34,5 +44,9 @@ BUTTON_NORMAL = 'normal'
 BUTTON_CLICKED = 'clicked'
 
 # offset for grid placement
-GRID_OFFSET_X = 100
-GRID_OFFSET_Y = 100
+GRID_OFFSET_X = 120
+GRID_OFFSET_Y = 200
+
+# offset for heat map placement
+HEAT_MAP_OFFSET_X = SCREEN_WIDTH // 2 + 2 * GRID_OFFSET_X // 3
+HEAT_MAP_OFFSET_Y = GRID_OFFSET_Y
