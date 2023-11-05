@@ -72,6 +72,7 @@ def create_grid_buttons(offset_x, offset_y):
     return buttons
 
 #returns a generated board of qubits
+#returns a generated board of qubits
 def generate_board(dim, ships, boards):
     target = ships*boards
     current = 0
@@ -100,8 +101,10 @@ def generate_board(dim, ships, boards):
             amplitude_0 = np.sqrt(1 - prob_0)
             amplitude_1 = np.sqrt(prob_0)
             circuit.initialize([amplitude_0, amplitude_1], qr[j])
-            
-    return circuit
+        board.append(circuit)
+             
+    return board
+
 
 
 def get_heat_map_color(probability):
