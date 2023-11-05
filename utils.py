@@ -72,7 +72,6 @@ def create_grid_buttons(offset_x, offset_y):
 
 #returns a generated board of qubits
 def generate_board(dim, ships, boards):
-    b = [[0 for _ in range(dim)] for _ in range(dim)]
     target = ships*boards
     current = 0
     m = []
@@ -81,14 +80,18 @@ def generate_board(dim, ships, boards):
         m.append(random_number / boards)
         current += random_number
     random.shuffle(m)
+
+    qr = QuantumRegister(dim*dim, 'q')
+    cr = ClassicalRegister(dim*dim, 'c')
+    circuit = QuantumCircuit(qr, cr)
+
     for i in range(dim):
         for j in range(dim):
             prob_0 = m[i*dim + j]
             amplitude_0 = np.sqrt(1 - prob_0)
             amplitude_1 = np.sqrt(prob_0)
-            qr = QuantumRegister(1, 'q')
-            cr = ClassicalRegister(1, 'c')
-            circuit = QuantumCircuit(qr, cr)
-            circuit.initialize([amplitude_0, amplitude_1], qr[0])
-            b[i][j] = circuit
-    return b
+            circuit.initialize([amplitude_0, amplitude_1], qr[i*dim + j])
+            print(qr[i*dim + j])
+            
+    return circuit
+
