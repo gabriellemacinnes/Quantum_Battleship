@@ -50,6 +50,7 @@ def draw_button(surface, color, position, size):
 
 def draw_indices(surface, offset_x, offset_y, font):
     """Draws the grid indices on the surface."""
+
     # Draw X-axis indices (capital letters)
     for i in range(config.GRID_COLS):
         letter = chr(65 + i)  # Converts number to capital letter (A-J)
@@ -86,14 +87,10 @@ def generate_board(dim, ships, boards):
     m = []
     for i in range(dim*dim):
         random_number = random.uniform(0, min(boards - boards/3 , target - current ))
-        if i == 1:
-            random_number = 0
+        
         m.append(random_number / boards)
         current += random_number
-    b = m[:2]
-    a = m[2:]
-    random.shuffle(a)
-    m = b + a
+    
     board = []
 
     for i in range(dim):
@@ -105,9 +102,10 @@ def generate_board(dim, ships, boards):
             amplitude_0 = np.sqrt(1 - prob_0)
             amplitude_1 = np.sqrt(prob_0)
             circuit.initialize([amplitude_0, amplitude_1], qr[j])
-        board.append(circuit)
-             
+            board.append(circuit)
+      
     return board
+
 
 def get_heat_map_color(probability):
     if 1 < probability < 9:
