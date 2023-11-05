@@ -14,8 +14,8 @@ Ahoy, Quantum Commander! Prepare to set sail on a mind-bending voyage through th
 Your mission, valiant commander, is to lay waste to a fleet of 10 enemy battleships using the enigmatic weaponry of classical and quantum cannons. 
 Take heed, for these are not regular battleships. They exist in states of superposition across the vast ocean.
 Use the space bar to toggle between classical cannons and enigmatic quantum cannons, and press enter to unleash their fury.
-(picture) Classical cannons unveil the true nature of a single square.
-(picture) Quantum cannons shall illuminate the probabilities of four adjacent grid squares. 
+Classical cannons unveil the true nature of a single square.
+Quantum cannons shall illuminate the probabilities of four adjacent grid squares. 
 Legend has it parts of sea are entangled, for firing upon one shall unveil the destiny of its counterpart. 
 To gain further insights, toggle the image on the right to reveal the intricate heat map of probabilities. 
 
