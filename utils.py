@@ -102,7 +102,9 @@ def generate_board(dim, ships, boards):
             amplitude_1 = np.sqrt(prob_0)
             circuit.initialize([amplitude_0, amplitude_1], qr[j])
         board.append(circuit)
-             
+        if i == 0:
+            board[0].cx(qr[0], qr[1])  
+      
     return board
 
 
