@@ -11,11 +11,18 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 # heat map colours
-OCEAN_BLUE = (28, 107, 160)
-COOL_BLUE = (93, 173, 226)
-MILD_BLUE = (129, 212, 250)
-WARM_BLUE = (174, 228, 255)
-HOT_BLUE = (202, 240, 255)
+BLUE1 = pygame.Color("#08519C")
+BLUE2 = pygame.Color("#2270B5")
+BLUE3 = pygame.Color("#4192C5")
+BLUE4 = pygame.Color("#6AAED6")
+BLUE5 = pygame.Color("#9ECAE1")
+BLUE6 = pygame.Color("#C6DAEF")
+ORANGE1 = pygame.Color("#FFFFE4")
+ORANGE2 = pygame.Color("#FFF7BB")
+ORANGE3 = pygame.Color("#FEE391")
+ORANGE4 = pygame.Color("#FEC34F")
+ORANGE5 = pygame.Color("#FE9928")
+ORANGE6 = pygame.Color("#EB7013")
 
 # background
 BACKGROUND_COLOR = WHITE

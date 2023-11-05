@@ -23,7 +23,17 @@ def load_images():
     scroll_image = pygame.transform.scale(scroll_image, (scroll_image_width, scroll_image_height))
     quote_image = pygame.image.load("assets/images/quote.png")
     quote_image = pygame.transform.scale(quote_image, (config.GRID_WIDTH, config.GRID_HEIGHT))
-    return target_image, sea_image, background_image, scroll_image, quote_image
+    fire_image = pygame.image.load("assets/images/fire.png")
+    wreck_image = pygame.image.load("assets/images/wreck.png")
+    return target_image, sea_image, background_image, scroll_image, quote_image, fire_image, wreck_image
+
+def load_sounds():
+    """Loads sound effects to be used in the game"""
+    click_sound = pygame.mixer.Sound('assets/sounds/menu.mp3')
+    explosion_sound = pygame.mixer.Sound('assets/sounds/explosion.mp3')
+    explosion_sound.set_volume(0.50)
+    splash_sound = pygame.mixer.Sound('assets/sounds/splash.mp3')
+    return click_sound, explosion_sound, splash_sound
 
 def create_overlay(size, alpha, colour):
     """Creates a translucent overlay surface."""
@@ -84,10 +94,7 @@ def generate_board(dim, ships, boards):
     a = m[2:]
     random.shuffle(a)
     m = b + a
-   
-
     board = []
-
 
     for i in range(dim):
         qr = QuantumRegister(dim, 'q')
@@ -103,16 +110,30 @@ def generate_board(dim, ships, boards):
     return board
 
 def get_heat_map_color(probability):
-    if probability == -1:
-        return config.OCEAN_BLUE
-    elif probability < 25:
-        return config.COOL_BLUE
-    elif probability < 50:
-        return config.MILD_BLUE
-    elif probability < 75:
-        return config.WARM_BLUE
+    if 1 < probability < 9:
+        return config.BLUE2
+    elif 10 < probability < 19:
+        return config.BLUE3
+    elif 20 < probability < 29:
+        return config.BLUE4
+    elif 30 < probability < 39:
+        return config.BLUE5
+    elif 40 < probability < 49:
+        return config.BLUE6
+    elif 50 < probability < 59:
+        return config.ORANGE1
+    elif 60 < probability < 69:
+        return config.ORANGE2
+    elif 70 < probability < 79:
+        return config.ORANGE3
+    elif 80 < probability < 89:
+        return config.ORANGE4
+    elif 90 < probability < 99:
+        return config.ORANGE5
+    elif probability == 100:
+        return config.ORANGE6
     else:
-        return config.HOT_BLUE
+        return config.BLUE1
 
 def draw_heat_map(screen, probabilities, font):
     # Iterate over the grid positions to create the heat map
@@ -134,6 +155,6 @@ def draw_heat_map(screen, probabilities, font):
             
             # Optionally, draw the probability text over the heat map
             if probability != -1:
-                text = font.render(f"{probability}%", True, config.DARK_GREY if probability > 50 else config.LIGHT_GREY)
+                text = font.render(f"{probability}%", True, config.BLACK)
                 text_rect = text.get_rect(center=(pos_x + config.BUTTON_WIDTH // 2, pos_y + config.BUTTON_HEIGHT // 2))
                 screen.blit(text, text_rect)

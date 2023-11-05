@@ -43,8 +43,9 @@ def get_prob(row):
 
 def main_menu(screen):
     """Displays the main menu with custom buttons for starting the game or viewing instructions."""
-    # Load images
-    _, _, background_image, scroll_image, _ = load_images()
+    # Load images and sounds
+    _, _, background_image, scroll_image, _, _, _ = load_images()
+    click_sound, _, _ = load_sounds()
     
     # Define the fonts
     title_font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 70)
@@ -60,8 +61,8 @@ def main_menu(screen):
     scroll_rect = scroll_image.get_rect(center=(config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 3.5))
 
     # Position the title and subtitle on the scroll
-    title_rect = title_surface.get_rect(center=(scroll_rect.centerx, scroll_rect.centery - 20))
-    subtitle_rect = subtitle_surface.get_rect(center=(scroll_rect.centerx, scroll_rect.centery + 35))
+    title_rect = title_surface.get_rect(center=(scroll_rect.centerx, scroll_rect.centery - 25))
+    subtitle_rect = subtitle_surface.get_rect(center=(scroll_rect.centerx, scroll_rect.centery + 30))
 
     # Calculate the position of the buttons to be below the scroll image
     button_y = scroll_rect.bottom + 50  # Position buttons 50 pixels below the scroll
@@ -95,6 +96,7 @@ def main_menu(screen):
                 is_running = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                click_sound.play()
                 mouse_pos = event.pos
                 for button_key, button_props in buttons.items():
                     if button_props['rect'].collidepoint(mouse_pos):
@@ -124,7 +126,8 @@ def main_menu(screen):
 
 def main(screen):
    # Set up the display, load images, and create the grid
-    target_image, sea_image, background_image, _, quote_image = load_images()
+    target_image, sea_image, background_image, _, quote_image, fire_image, wreck_image = load_images()
+    click_sound, explosion_sound, splash_sound = load_sounds()
     target_image_rect = target_image.get_rect()
     font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 16)
     font.set_bold(True)
@@ -150,7 +153,7 @@ def main(screen):
     probabilities_snapshot = probabilities.copy()
     prob_display = [[False for x in range(8)] for y in range(8)]
     shots_fired, ships_sunk = 0, 0
-    ship_state = [[-1 for _ in range(8)] for _ in range(8)]
+    ship_state = [[(-1, 0) for _ in range(8)] for _ in range(8)]
 
     while running:
          # Blit images and overlays
@@ -256,12 +259,14 @@ def main(screen):
                             prob_display[x][y] = False
                             state = classic(pos_key)
                             if state == 1: #hit
+                                explosion_sound.play()
                                 ships_sunk += 1
                                 probabilities[x][y] = 100 
-                                ship_state[x][y] = 1
+                                ship_state[x][y] = 1, pygame.time.get_ticks()
                             else: #miss
+                                splash_sound.play()
                                 probabilities[x][y] = 0
-                                ship_state[x][y] = 0
+                                ship_state[x][y] = 0, 0
                 elif event.key == pygame.K_SPACE:
                     if torpedo == 0:
                         # update position to allow for expansion of target
@@ -279,6 +284,7 @@ def main(screen):
                         target_image = pygame.transform.scale(target_image, (new_width, new_height))
                         torpedo = 0
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click_sound.play()
                 if heat_map_toggle_rect.collidepoint(event.pos):
                     display_heat_map = not display_heat_map  # Toggle the heat map display
                 elif home_toggle_rect.collidepoint(event.pos):
@@ -294,6 +300,34 @@ def main(screen):
         else:
             # If the heat map is toggled off, draw the quote image instead
             screen.blit(quote_image, (config.HEAT_MAP_OFFSET_X, config.HEAT_MAP_OFFSET_Y))
+
+        # Draw fire images
+        for i in range(8):
+            for j in range(8):
+                if ship_state[j][i][0] == 1:  # Check if a ship has been hit
+                    time_since_hit = pygame.time.get_ticks() - ship_state[j][i][1]
+                    pos = (config.GRID_OFFSET_X + 50*i, config.GRID_OFFSET_Y + 50*j)  # Position for blitting images
+
+                    if time_since_hit < 2000:
+                        # Ensure the fire image is fully visible initially
+                        fire_image.set_alpha(255)
+                        screen.blit(fire_image, pos)
+                    else:
+                        fade_duration = 2500  # Duration of the fade in milliseconds
+                        if time_since_hit - 2000 < fade_duration:
+                            # Fade out fire image
+                            fire_alpha = max(0, min(255, int(255 - ((time_since_hit - 2000) / fade_duration) * 255)))
+                            fire_image.set_alpha(fire_alpha)
+                            screen.blit(fire_image, pos)
+
+                            # Fade in wreck image
+                            wreck_alpha = max(0, min(255, int(((time_since_hit - 2000) / fade_duration) * 255)))
+                            wreck_image.set_alpha(wreck_alpha)
+                            screen.blit(wreck_image, pos)
+                        else:
+                            # Once fade is complete, display wreck image normally
+                            wreck_image.set_alpha(255)
+                            screen.blit(wreck_image, pos)
 
         # Draw the indices for the grid and heat map
         draw_indices(screen, config.GRID_OFFSET_X, config.GRID_OFFSET_Y, font)
@@ -338,4 +372,8 @@ def main(screen):
 # Run the game
 if __name__ == "__main__":
     screen = init_pygame()
+    theme_song = pygame.mixer.init()
+    pygame.mixer.music.load('assets/sounds/theme_song.mp3')
+    pygame.mixer.music.set_volume(0.25)
+    pygame.mixer.music.play(-1)
     main_menu(screen)
