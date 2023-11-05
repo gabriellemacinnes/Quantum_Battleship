@@ -123,7 +123,7 @@ def main_menu(screen):
     sys.exit()
 
 def main(screen):
-    # Set up the display, load images, and create the grid
+   # Set up the display, load images, and create the grid
     target_image, sea_image, background_image, _, quote_image = load_images()
     target_image_rect = target_image.get_rect()
     font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 16)
@@ -146,10 +146,11 @@ def main(screen):
     discovered = set()  # Keep track of discovered squares
     torpedo = 0  # classic = 0, quantum = 1
     probabilities = [[get_prob((x, y)) for x in range(8)]for y in range(8)]
+    probabilities_snapshot = probabilities.copy()
     prob_display = [[False for x in range(8)] for y in range(8)]
 
     while running:
-        # Blit images and overlays
+         # Blit images and overlays
         screen.blit(background_image, (0, 0))
         screen.blit(event_string_background, (config.GRID_OFFSET_X - 40, config.GRID_OFFSET_Y - 120))
         screen.blit(heat_map_toggle_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 120))
@@ -171,10 +172,20 @@ def main(screen):
         pygame.draw.rect(screen, config.DARK_GREY, toggle_rect.inflate(20, 8), border_radius=8)  # Inflating the rect for visual padding
         screen.blit(toggle_text, (toggle_rect.topleft[0], toggle_rect.topleft[1] - 1))
 
+        # Draw the "Shots Fired:" text
+        font.set_bold(True)
+        shots_fired_text = font.render('Shots Fired:', True, config.BLACK)
+        screen.blit(shots_fired_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 152))
+
         # Draw the "Ships Sunk:" text
         font.set_bold(True)
-        heat_map_text = font.render('Ships Sunk:', True, config.BLACK)
-        screen.blit(heat_map_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 152))
+        ships_sunk_text = font.render('Ships Sunk:', True, config.BLACK)
+        screen.blit(ships_sunk_text, (config.GRID_OFFSET_X + 140, config.GRID_OFFSET_Y - 152))
+
+        # Draw the "Ships Left:" text
+        font.set_bold(True)
+        ships_left_text = font.render('Ships Left:', True, config.BLACK)
+        screen.blit(ships_left_text, (config.GRID_OFFSET_X + 280, config.GRID_OFFSET_Y - 152))
 
         # Event handling
         for event in pygame.event.get():
@@ -205,9 +216,6 @@ def main(screen):
                             discovered.add(pos_key)
                             grid_buttons[pos_key]['state'] = config.BUTTON_CLICKED
                             prob_display[x][y] = False
-                            
-                        # Update probabilities
-                        probabilities = [[get_prob((x, y)) for x in range(8)]for y in range(8)]
                 elif event.key == pygame.K_SPACE:
                     if torpedo == 0:
                         # update position to allow for expansion of target
@@ -227,7 +235,7 @@ def main(screen):
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if toggle_rect.collidepoint(event.pos):
                     display_heat_map = not display_heat_map  # Toggle the heat map display
-        
+
         # Draw heat map or quote image based on the toggle
         if display_heat_map:
             # Your existing code to draw the heat map
