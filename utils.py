@@ -94,12 +94,12 @@ def generate_board(dim, ships, boards):
             amplitude_0 = np.sqrt(1 - prob_0)
             amplitude_1 = np.sqrt(prob_0)
             circuit.initialize([amplitude_0, amplitude_1], qr[j])
+            board.append(circuit)
         if i == 0 or i == 1:
-            for a in range(0, 7, 2):
+            for a in range(0,7, 2):
                 circuit.cx(qr[a], qr[a+1])  
       
     return board
-
 
 
 def get_heat_map_color(probability):
