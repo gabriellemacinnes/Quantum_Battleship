@@ -6,9 +6,8 @@ import qiskit as qk
 from pygame.locals import *
 from utils import *
 
-qc = generate_board(8, 15, 1)
+qc = generate_board(8, 18, 1)
 shots = 1024
-
 
 def init_pygame():
     """Initializes Pygame and creates the game screen."""
@@ -77,12 +76,6 @@ def main_menu(screen):
             'rect': pygame.Rect((config.SCREEN_WIDTH // 2 - button_size[0] // 2, button_y), button_size),
             'text': 'Start Game',
             'action': lambda: main(screen),
-        },
-        'instructions': {
-            'color': config.DARK_GREY,
-            'rect': pygame.Rect((config.SCREEN_WIDTH // 2 - button_size[0] // 2, button_y + button_size[1] + 10), button_size),
-            'text': 'Instructions',
-            'action': lambda: print("Show instructions here."),  # Placeholder for instructions logic
         }
     }
 
@@ -133,6 +126,7 @@ def main(screen):
     target_image_rect = target_image.get_rect()
     font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 16)
     font.set_bold(True)
+    show_popup = False
 
     # Create overlays
     event_string_background = create_overlay((config.GRID_WIDTH + 80, 40), 150, config.LIGHT_GREY)
@@ -170,14 +164,18 @@ def main(screen):
     running = True
     display_heat_map = True
     current_pos = [0, 0]
+    event_time = pygame.time.get_ticks() - 3000
     discovered = set()  # Keep track of discovered squares
     cannon = 0  # classic = 0, quantum = 1
     prob_display = [[False for x in range(8)] for y in range(8)]
     shots_fired, ships_sunk = 0, 0
     ship_state = [[[-1, 0] for _ in range(8)] for _ in range(8)]
+    current_event_message = None
+    current_event_start_time = None
+    quantum_fired = False
 
     while running:
-         # Blit images and overlays
+        # Blit images and overlays
         screen.blit(background_image, (0, 0))
         screen.blit(event_string_background, (config.GRID_OFFSET_X - 40, config.GRID_OFFSET_Y - 120))
         screen.blit(heat_map_toggle_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 120))
@@ -227,7 +225,7 @@ def main(screen):
 
         # Draw the "Probability Heat Map Display:" text
         heat_map_text = font.render('Probability Heat Map Display:', True, config.SPECIAL_RED)
-        screen.blit(heat_map_text, (config.HEAT_MAP_OFFSET_X + 57, config.HEAT_MAP_OFFSET_Y - 114))
+        screen.blit(heat_map_text, (config.HEAT_MAP_OFFSET_X + 57, config.HEAT_MAP_OFFSET_Y - 115))
 
         # Draw the heat map toggle
         heat_map_toggle_text = font.render('ON' if display_heat_map else 'OFF', True, config.LIGHT_GREY)
@@ -235,17 +233,37 @@ def main(screen):
         pygame.draw.rect(screen, config.DARK_GREY, heat_map_toggle_rect.inflate(20, 8), border_radius=8)  # Inflating the rect for visual padding
         screen.blit(heat_map_toggle_text, (heat_map_toggle_rect.topleft[0], heat_map_toggle_rect.topleft[1] - 1))
 
-        # Draw the "Shots Fired:" text
-        shots_fired_text = font.render('Shots Fired:', True, config.BLACK)
-        screen.blit(shots_fired_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 152))
+        # Draw the "Shots Fired:" text 
+        shots_fired_text = font.render('Shots Fired: ' + str(shots_fired), True, config.BLACK)
+        screen.blit(shots_fired_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 149))
 
         # Draw the "Ships Sunk:" text
-        ships_sunk_text = font.render('Ships Sunk:', True, config.BLACK)
-        screen.blit(ships_sunk_text, (config.GRID_OFFSET_X + 140, config.GRID_OFFSET_Y - 152))
+        ships_sunk_text = font.render('Ships Sunk: ' + str(ships_sunk), True, config.BLACK)
+        screen.blit(ships_sunk_text, (config.GRID_OFFSET_X + config.GRID_WIDTH - 105, config.GRID_OFFSET_Y - 149))
 
-        # Draw the "ESR Range:" text
-        esr_range_text = font.render('ESR Range:', True, config.BLACK)
-        screen.blit(esr_range_text, (config.GRID_OFFSET_X + 280, config.GRID_OFFSET_Y - 152))
+        current_time = pygame.time.get_ticks()
+
+        # If there is no current event message or it has been displayed for over 3 seconds
+        if not current_event_message or current_time - current_event_start_time > 3000:
+            # Determine the event string based on the current game state
+            text, special_event = determine_event_string(cannon, current_pos, ship_state, event_time, lookup1, lookup2, quantum_fired)
+            
+            # If a special event has occurred (like firing the cannon), set the message and timestamp
+            if special_event:
+                current_event_message = text
+                current_event_start_time = current_time
+
+                # If the quantum cannon was fired, reset the flag after setting the message
+                if quantum_fired:
+                    quantum_fired = False
+            
+            # If no special event, the message remains None and will not be drawn
+        else:
+            # Keep showing the current event message
+            text = current_event_message
+
+        # Draw the current event message (if any)
+        draw_event_string(screen, text, special_event, font, 115)
 
         # Event handling
         for event in pygame.event.get():
@@ -261,7 +279,10 @@ def main(screen):
                 elif event.key == pygame.K_DOWN:
                     current_pos[0] = min(current_pos[0] + 1, config.GRID_ROWS - 1 - cannon)
                 elif event.key == pygame.K_RETURN:
+                    if pygame.time.get_ticks() - event_time > 3000:
+                        event_time = pygame.time.get_ticks()
                     if cannon == 1:
+                        quantum_fired = True
                         shots_fired += 1
                         x, y = current_pos
                         squares = [(x, y), (x+1, y), (x, y+1), (x+1, y+1)]
@@ -405,11 +426,48 @@ def main(screen):
         target_image_rect.topleft = grid_buttons[tuple(current_pos)]['rect'].topleft
         screen.blit(target_image, target_image_rect.topleft)
 
+        if ships_sunk == 10 or ships_sunk == 11:
+            draw_popup(screen, shots_fired)
+
         # Update the display
         pygame.display.flip()
 
     pygame.quit()
     sys.exit()
+
+def draw_blurred_background(screen):
+    # Take a copy of the current screen to apply the blur effect
+    background = screen.copy()
+    # Fill it with white and use a high alpha to create the blur effect
+    overlay = pygame.Surface((background.get_width(), background.get_height()), flags=pygame.SRCALPHA)
+    overlay.fill((255, 255, 255, 180))  # Semi-transparent white
+    background.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+    return background
+
+def draw_popup(screen, shots_taken):
+    # First, draw the blurred background
+    blurred_bg = draw_blurred_background(screen)
+    screen.blit(blurred_bg, (0, 0))
+
+    # Define the popup rect
+    popup_rect = pygame.Rect(0, 0, 300, 200)
+    popup_rect.center = screen.get_rect().center
+
+    # Draw the popup background
+    pygame.draw.rect(screen, (50, 50, 50), popup_rect, border_radius=12)
+
+    # Set up the font for drawing text
+    font = pygame.font.Font(None, 36)
+
+    # Draw the "You Win!" message
+    win_text = font.render('You Win!', True, config.LIGHT_GREY)
+    win_text_rect = win_text.get_rect(center=(popup_rect.centerx, popup_rect.centery - 20))
+    screen.blit(win_text, win_text_rect)
+
+    # Draw the shots taken
+    shots_text = font.render(f'Shots taken: {shots_taken}', True, config.LIGHT_GREY)
+    shots_text_rect = shots_text.get_rect(center=(popup_rect.centerx, popup_rect.centery + 20))
+    screen.blit(shots_text, shots_text_rect)
 
 # Run the game
 if __name__ == "__main__":

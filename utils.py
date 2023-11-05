@@ -159,3 +159,57 @@ def draw_heat_map(screen, probabilities, font):
                 text = font.render(f"{probability}%", True, config.BLACK)
                 text_rect = text.get_rect(center=(pos_x + config.BUTTON_WIDTH // 2, pos_y + config.BUTTON_HEIGHT // 2))
                 screen.blit(text, text_rect)
+
+def determine_event_string(cannon, current_pos, ship_state, event_time, lookup1, lookup2, quantum_fired):
+    current_time = pygame.time.get_ticks()
+    event_active = (current_time - event_time <= 3000)
+    
+    # Check if a quantum cannon has been fired
+    if quantum_fired and event_active:
+        return config.QUANTUM_MESSAGES[int(str(event_time)[-1])], True
+    
+    # Check various conditions for ship state and entanglement
+    pos_key = tuple(current_pos)
+    ship_hit = ship_state[current_pos[0]][current_pos[1]][0] == 1
+    entangled = pos_key in lookup1.keys() or pos_key in lookup2.keys()
+
+    if not ship_hit and not entangled and event_active:
+        return config.SHIP_MISS_MESSAGES[int(str(event_time)[-1])], True
+    elif not ship_hit and entangled and event_active:
+        return config.ENTANGLEMENT_MISS_MESSAGES[int(str(event_time)[-1])], True
+    elif ship_hit and not entangled and event_active:
+        return config.SHIP_HIT_MESSAGES[int(str(event_time)[-1])], True
+    elif ship_hit and entangled and event_active:
+        return config.ENTANGLEMENT_HIT_MESSAGES[int(str(event_time)[-1])], True
+
+    # If no special event, return targeting info based on cannon type
+    if cannon == 0:
+        return "Press ENTER to fire a classical cannon at " + str(chr(current_pos[1] + 65)) + str(current_pos[0] + 1) + ".", False
+    elif cannon == 1:
+        # Return quantum targeting information
+        return ("Press ENTER to fire a quantum cannon at " + str(chr(current_pos[1] + 65)) + str(current_pos[0] + 1) + ", " +
+                str(chr(current_pos[1] + 65)) + str(current_pos[0] + 2) + ", " + str(chr(current_pos[1] + 66)) + str(current_pos[0] + 1) +
+                ", " + str(chr(current_pos[1] + 66)) + str(current_pos[0] + 2) + "."), False
+
+def draw_event_string(screen, text, special_event, font, y_offset):
+    """Draw the event string text."""
+    # Render the text
+    event_string_text = font.render(text, True, config.SPECIAL_RED)
+
+    # Calculate the width of the text
+    text_width = event_string_text.get_width()
+    
+    # Define the start and end points for centering
+    start_point = config.GRID_OFFSET_X
+    end_point = config.GRID_OFFSET_X + (51 * 7) + 50
+    
+    # Calculate the total available space
+    total_space = end_point - start_point
+    
+    # Calculate the position to center the text
+    text_position_x = start_point + (total_space - text_width) // 2
+    
+    # Get the y position from the config
+    text_position_y = config.GRID_OFFSET_Y - y_offset
+
+    screen.blit(event_string_text, (text_position_x, text_position_y))
