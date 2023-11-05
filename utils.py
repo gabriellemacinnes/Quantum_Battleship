@@ -7,7 +7,6 @@ from qiskit import BasicAer, IBMQ
 from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit
 import qiskit as qk
 from pygame.locals import *
-from utils import *
 
 def load_images():
     """Loads and transforms images to be used in the game."""

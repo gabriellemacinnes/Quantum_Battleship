@@ -5,10 +5,7 @@ import qiskit as qk
 from pygame.locals import *
 from utils import *
 
-qc = []
-for _ in range(8):
-    qc.append(QuantumCircuit(8,8))
-#qc = generate_board(8, 12, 1)
+qc = generate_board(8, 12, 1)
 
 def init_pygame():
     """Initializes Pygame and creates the game screen."""
