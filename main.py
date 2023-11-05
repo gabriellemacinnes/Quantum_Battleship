@@ -5,7 +5,10 @@ import qiskit as qk
 from pygame.locals import *
 from utils import *
 
-qc = generate_board(8, 12, 1)
+qc = []
+for _ in range(8):
+    qc.append(QuantumCircuit(8,8))
+#qc = generate_board(8, 12, 1)
 
 def init_pygame():
     """Initializes Pygame and creates the game screen."""
@@ -16,8 +19,8 @@ def init_pygame():
 
 def classic(pos):
     x, y = pos
-    circ = qc[y][x]
-    circ.measure(0, 0)
+    circ = qc[y]
+    circ.measure(x, x)
     simulator = qk.Aer.get_backend('qasm_simulator')
     result = qk.execute(circ, simulator, shots=1).result()
     counts = result.get_counts(circ)
@@ -26,8 +29,8 @@ def classic(pos):
  
 def get_prob(position):
     x, y = position
-    circuit = qc[y][x]
-    circuit.measure(0, 0)
+    circuit = qc[y]
+    circuit.measure(x, x)
     simulator = qk.Aer.get_backend('qasm_simulator')
     result = qk.execute(circuit, simulator, shots=1024).result()
     counts = result.get_counts(circuit)
