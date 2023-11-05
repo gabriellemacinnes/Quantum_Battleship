@@ -8,6 +8,7 @@ from utils import *
 qc = generate_board(8, 12, 1)
 shots = 1024
 
+
 def init_pygame():
     """Initializes Pygame and creates the game screen."""
     pygame.init()
@@ -141,12 +142,18 @@ def main(screen):
     # Create grid buttons
     grid_buttons = create_grid_buttons(config.GRID_OFFSET_X, config.GRID_OFFSET_Y)
 
+    grid_loc = grid_buttons.keys()
+    circ_loc = grid_buttons.keys()
+    lookup = dict(zip(grid_loc, circ_loc))
+    reverse_lookup = dict(zip(circ_loc, grid_loc))
+
+    probabilities = [get_prob(y) for y in range(8)]
+
     running = True
     display_heat_map = True
     current_pos = [0, 0]
     discovered = set()  # Keep track of discovered squares
     torpedo = 0  # classic = 0, quantum = 1
-    probabilities = [get_prob(y) for y in range(8)]
     probabilities_snapshot = probabilities.copy()
     prob_display = [[False for x in range(8)] for y in range(8)]
     shots_fired, ships_sunk = 0, 0
