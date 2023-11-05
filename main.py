@@ -6,7 +6,7 @@ import qiskit as qk
 from pygame.locals import *
 from utils import *
 
-qc = generate_board(8, 18, 1)
+qc = generate_board(8, 15, 1)
 shots = 1024
 
 
@@ -163,7 +163,7 @@ def main(screen):
         val = lookup1[key]
         k1, k2 = key
         v1, v2 = val
-        p = 0.5 * (int(probabilities[k1][k2]) + int(probabilities[v1][v2]))
+        p = int(0.5 * (int(probabilities[k1][k2]) + int(probabilities[v1][v2])))
         probabilities[k1][k2] = p
         probabilities[v1][v2] = p
 
@@ -171,11 +171,10 @@ def main(screen):
     display_heat_map = True
     current_pos = [0, 0]
     discovered = set()  # Keep track of discovered squares
-    torpedo = 0  # classic = 0, quantum = 1
-    probabilities_snapshot = probabilities.copy()
+    cannon = 0  # classic = 0, quantum = 1
     prob_display = [[False for x in range(8)] for y in range(8)]
     shots_fired, ships_sunk = 0, 0
-    ship_state = [[(-1, 0) for _ in range(8)] for _ in range(8)]
+    ship_state = [[[-1, 0] for _ in range(8)] for _ in range(8)]
 
     while running:
          # Blit images and overlays
@@ -256,13 +255,13 @@ def main(screen):
                 if event.key == pygame.K_LEFT:
                     current_pos[1] = max(current_pos[1] - 1, 0)
                 elif event.key == pygame.K_RIGHT:
-                    current_pos[1] = min(current_pos[1] + 1, config.GRID_COLS - 1 - torpedo)
+                    current_pos[1] = min(current_pos[1] + 1, config.GRID_COLS - 1 - cannon)
                 elif event.key == pygame.K_UP:
                     current_pos[0] = max(current_pos[0] - 1, 0)
                 elif event.key == pygame.K_DOWN:
-                    current_pos[0] = min(current_pos[0] + 1, config.GRID_ROWS - 1 - torpedo)
+                    current_pos[0] = min(current_pos[0] + 1, config.GRID_ROWS - 1 - cannon)
                 elif event.key == pygame.K_RETURN:
-                    if torpedo == 1:
+                    if cannon == 1:
                         shots_fired += 1
                         x, y = current_pos
                         squares = [(x, y), (x+1, y), (x, y+1), (x+1, y+1)]
@@ -291,27 +290,27 @@ def main(screen):
                                     tx, ty = twin
                                     ships_sunk += 1
                                     probabilities[tx][ty] = 100 
-                                    ship_state[tx][ty] = 1
+                                    ship_state[tx][ty] = (1, pygame.time.get_ticks())
                                     discovered.add(twin)
                                     grid_buttons[twin]['state'] = config.BUTTON_CLICKED
                                     prob_display[tx][ty] = False
 
                                 ships_sunk += 1
                                 probabilities[x][y] = 100 
-                                ship_state[x][y] = 1, pygame.time.get_ticks()
+                                ship_state[x][y] = (1, pygame.time.get_ticks())
                             else: #miss
                                 splash_sound.play()
                                 if twin:
                                     tx, ty = twin
                                     probabilities[tx][ty] = 0
-                                    ship_state[tx][ty] = 0
+                                    ship_state[tx][ty][0] = 0
                                     discovered.add(twin)
                                     grid_buttons[twin]['state'] = config.BUTTON_CLICKED
                                     prob_display[tx][ty] = False
                                 probabilities[x][y] = 0
-                                ship_state[x][y] = 0, 0
+                                ship_state[x][y][0] = 0
                 elif event.key == pygame.K_SPACE:
-                    if torpedo == 0:
+                    if cannon == 0:
                         # update position to allow for expansion of target
                         if current_pos[0] == config.GRID_ROWS - 1:
                             current_pos[0] -= 1
@@ -320,12 +319,12 @@ def main(screen):
                         new_width = target_image.get_width() * 2
                         new_height = target_image.get_height() * 2
                         target_image = pygame.transform.scale(target_image, (new_width, new_height))
-                        torpedo = 1
+                        cannon = 1
                     else:
                         new_width = target_image.get_width() / 2
                         new_height = target_image.get_height() / 2
                         target_image = pygame.transform.scale(target_image, (new_width, new_height))
-                        torpedo = 0
+                        cannon = 0
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click_sound.play()
                 if heat_map_toggle_rect.collidepoint(event.pos):
@@ -349,7 +348,7 @@ def main(screen):
             for j in range(8):
                 if ship_state[j][i][0] == 1:  # Check if a ship has been hit
                     time_since_hit = pygame.time.get_ticks() - ship_state[j][i][1]
-                    pos = (config.GRID_OFFSET_X + 50*i, config.GRID_OFFSET_Y + 50*j)  # Position for blitting images
+                    pos = (config.GRID_OFFSET_X + 51*i, config.GRID_OFFSET_Y + 51*j)  # Position for blitting images
 
                     if time_since_hit < 2000:
                         # Ensure the fire image is fully visible initially

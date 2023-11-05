@@ -90,7 +90,10 @@ def generate_board(dim, ships, boards):
         
         m.append(random_number / boards)
         current += random_number
-    
+
+    for i in range(10):
+        random.shuffle(m)
+
     board = []
 
     for i in range(dim):
@@ -102,7 +105,7 @@ def generate_board(dim, ships, boards):
             amplitude_0 = np.sqrt(1 - prob_0)
             amplitude_1 = np.sqrt(prob_0)
             circuit.initialize([amplitude_0, amplitude_1], qr[j])
-            board.append(circuit)
+        board.append(circuit)
       
     return board
 
