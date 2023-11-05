@@ -1,6 +1,7 @@
 import pygame
 import sys
 import config
+import random
 import qiskit as qk
 from pygame.locals import *
 from utils import *
@@ -142,12 +143,26 @@ def main(screen):
     # Create grid buttons
     grid_buttons = create_grid_buttons(config.GRID_OFFSET_X, config.GRID_OFFSET_Y)
 
-    grid_loc = grid_buttons.keys()
-    circ_loc = grid_buttons.keys()
-    lookup = dict(zip(grid_loc, circ_loc))
-    reverse_lookup = dict(zip(circ_loc, grid_loc))
-
     probabilities = [get_prob(y) for y in range(8)]
+
+    entangled = set()
+    while len(entangled) < 16:
+        x = random.randint(0, 7)
+        y = random.randint(0, 7)
+        entangled.add((x, y))
+    
+    entangled = list(entangled)
+    a = entangled[:8]
+    b = entangled[8:]
+    lookup1 = dict(zip(a, b))
+    lookup2 = dict(zip(b, a))
+    for key in lookup1:
+        val = lookup1[key]
+        k1, k2 = key
+        v1, v2 = val
+        p = 0.5 * (int(probabilities[k1][k2]) + int(probabilities[v1][v2]))
+        probabilities[k1][k2] = p
+        probabilities[v1][v2] = p
 
     running = True
     display_heat_map = True
@@ -262,11 +277,32 @@ def main(screen):
                             grid_buttons[pos_key]['state'] = config.BUTTON_CLICKED
                             prob_display[x][y] = False
                             state = classic(pos_key)
+                            twin = None
+                            if (x, y) in lookup1.keys():
+                                twin = lookup1[(x, y)]
+                            elif (x, y) in lookup2.keys():
+                                twin = lookup2[(x, y)]
                             if state == 1: #hit
+                                if twin:
+                                    tx, ty = twin
+                                    ships_sunk += 1
+                                    probabilities[tx][ty] = 100 
+                                    ship_state[tx][ty] = 1
+                                    discovered.add(twin)
+                                    grid_buttons[twin]['state'] = config.BUTTON_CLICKED
+                                    prob_display[tx][ty] = False
+
                                 ships_sunk += 1
                                 probabilities[x][y] = 100 
                                 ship_state[x][y] = 1
                             else: #miss
+                                if twin:
+                                    tx, ty = twin
+                                    probabilities[tx][ty] = 0
+                                    ship_state[tx][ty] = 0
+                                    discovered.add(twin)
+                                    grid_buttons[twin]['state'] = config.BUTTON_CLICKED
+                                    prob_display[tx][ty] = False
                                 probabilities[x][y] = 0
                                 ship_state[x][y] = 0
                 elif event.key == pygame.K_SPACE:
