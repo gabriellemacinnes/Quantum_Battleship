@@ -77,9 +77,7 @@ def generate_board(dim, ships, boards):
     m = []
     for i in range(dim*dim):
         random_number = random.uniform(0, min(boards - boards/3 , target - current ))
-        if i < 16:
-            if i % 2 != 0:
-                random_number = 0
+        
         m.append(random_number / boards)
         current += random_number
     
@@ -95,9 +93,6 @@ def generate_board(dim, ships, boards):
             amplitude_1 = np.sqrt(prob_0)
             circuit.initialize([amplitude_0, amplitude_1], qr[j])
             board.append(circuit)
-        if i == 0 or i == 1:
-            for a in range(0,7, 2):
-                circuit.cx(qr[a], qr[a+1])  
       
     return board
 
