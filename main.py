@@ -6,6 +6,7 @@ from pygame.locals import *
 from utils import *
 
 qc = generate_board(8, 12, 1)
+shots = 1024
 
 def init_pygame():
     """Initializes Pygame and creates the game screen."""
@@ -16,30 +17,29 @@ def init_pygame():
 
 def classic(pos):
     x, y = pos
-    circ = qc[y]
-    circ.measure(x, x)
+    circ = qc[x]
+    circ.measure(y, y)
     simulator = qk.Aer.get_backend('qasm_simulator')
     result = qk.execute(circ, simulator, shots=1).result()
     counts = result.get_counts(circ)
     for key in counts:
-        return int(key)
+        return int(key[y])
  
-def get_prob(position):
-    x, y = position
-    circuit = qc[y]
-    circuit.measure(x, x)
+def get_prob(row):
+    circuit = qc[row]
+    circuit.measure_all()
     simulator = qk.Aer.get_backend('qasm_simulator')
     result = qk.execute(circuit, simulator, shots=1024).result()
     counts = result.get_counts(circuit)
-    prob = [0, 0]
+    prob = [0 for _ in range(8)]
     for key in counts:
-        if int(key) == 1:
-            prob[0] = counts[key]
-            prob[1] += counts[key]
-        elif int(key) == 0:
-            prob[1] += counts[key]
-    p = str(round(100 * prob[0]/prob[1]))
-    return p
+        for k in range(8):
+            if int(key[k]) == 1:
+                prob[k] += counts[key]
+    for k in range(8):
+
+        prob[k] = str(round(100 * prob[k]/shots))
+    return prob
 
 def main_menu(screen):
     """Displays the main menu with custom buttons for starting the game or viewing instructions."""
@@ -145,9 +145,11 @@ def main(screen):
     current_pos = [0, 0]
     discovered = set()  # Keep track of discovered squares
     torpedo = 0  # classic = 0, quantum = 1
-    probabilities = [[get_prob((x, y)) for x in range(8)]for y in range(8)]
+    probabilities = [get_prob(y) for y in range(8)]
     probabilities_snapshot = probabilities.copy()
     prob_display = [[False for x in range(8)] for y in range(8)]
+    shots_fired, ships_sunk = 0, 0
+    ship_state = [[-1 for _ in range(8)] for _ in range(8)]
 
     while running:
          # Blit images and overlays
@@ -202,6 +204,7 @@ def main(screen):
                     current_pos[0] = min(current_pos[0] + 1, config.GRID_ROWS - 1 - torpedo)
                 elif event.key == pygame.K_RETURN:
                     if torpedo == 1:
+                        shots_fired += 1
                         x, y = current_pos
                         squares = [(x, y), (x+1, y), (x, y+1), (x+1, y+1)]
                         for s in squares:
@@ -213,9 +216,18 @@ def main(screen):
                         pos_key = tuple(current_pos)
                         x, y = pos_key
                         if pos_key not in discovered:
+                            shots_fired += 1
                             discovered.add(pos_key)
                             grid_buttons[pos_key]['state'] = config.BUTTON_CLICKED
                             prob_display[x][y] = False
+                            state = classic(pos_key)
+                            if state == 1: #hit
+                                ships_sunk += 1
+                                probabilities[x][y] = 100 
+                                ship_state[x][y] = 1
+                            else: #miss
+                                probabilities[x][y] = 0
+                                ship_state[x][y] = 0
                 elif event.key == pygame.K_SPACE:
                     if torpedo == 0:
                         # update position to allow for expansion of target
