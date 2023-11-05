@@ -19,5 +19,5 @@ Quantum cannons shall illuminate the probabilities of four adjacent grid squares
 Legend has it parts of sea are entangled, for firing upon one shall unveil the destiny of its counterpart. 
 To gain further insights, toggle the image on the right to reveal the intricate heat map of probabilities. 
 
-Best of luck, intrepid commander, may your valor and determination guide you to triumph on these tumultuous quantum seas.
+Best of luck, intrepid commander, may your valour and determination guide you to triumph on these tumultuous quantum seas.
 
