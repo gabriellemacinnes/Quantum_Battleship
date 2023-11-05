@@ -127,6 +127,7 @@ def main(screen):
     target_image, sea_image, background_image, _, quote_image = load_images()
     target_image_rect = target_image.get_rect()
     font = pygame.font.Font("assets/fonts/OpenSans-VariableFont_wdth,wght.ttf", 16)
+    font.set_bold(True)
 
     # Create overlays
     event_string_background = create_overlay((config.GRID_WIDTH + 80, 40), 150, config.LIGHT_GREY)
@@ -162,32 +163,65 @@ def main(screen):
         screen.blit(heat_map_background, (config.HEAT_MAP_OFFSET_X - 40, config.HEAT_MAP_OFFSET_Y - 40))
         screen.blit(sea_image, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y))
 
-        # Draw the "Probability Heat Map Display:" text
-        font.set_bold(True)
-        heat_map_text = font.render('Probability Heat Map Display:', True, config.SPECIAL_RED)
-        screen.blit(heat_map_text, (config.HEAT_MAP_OFFSET_X + 57, config.HEAT_MAP_OFFSET_Y - 112))
+        # Draw the home and reset toggles
+        # Define the scale factor and spacing
+        scale_factor = 2.05
+        button_spacing = 10
 
-        # Draw the toggle
-        toggle_text = font.render('ON' if display_heat_map else 'OFF', True, config.LIGHT_GREY)
-        font.set_bold(False)
-        toggle_rect = toggle_text.get_rect(center=(config.HEAT_MAP_OFFSET_X + 3 * config.GRID_WIDTH // 4 + 15, config.HEAT_MAP_OFFSET_Y - 100))
-        pygame.draw.rect(screen, config.DARK_GREY, toggle_rect.inflate(20, 8), border_radius=8)  # Inflating the rect for visual padding
-        screen.blit(toggle_text, (toggle_rect.topleft[0], toggle_rect.topleft[1] - 1))
+        # Get the original home button dimensions and text
+        home_toggle_text = font.render('HOME', True, config.LIGHT_GREY)
+        home_toggle_rect_original = home_toggle_text.get_rect(center=(config.HEAT_MAP_OFFSET_X + 80, config.HEAT_MAP_OFFSET_Y - 142))
+
+        # Inflate the original rect for visual padding and get its size for reference
+        home_toggle_rect_padded = home_toggle_rect_original.inflate(20, 8)
+        original_width, original_height = home_toggle_rect_padded.size
+
+        # Calculate new width using the scale factor, keeping the height the same
+        new_width = original_width * scale_factor
+
+        # Create new rects for the buttons, keeping the height of the original rect
+        home_toggle_rect = pygame.Rect(home_toggle_rect_original.left, home_toggle_rect_original.top, new_width, original_height)
+        reset_toggle_rect = pygame.Rect(home_toggle_rect.right + button_spacing, home_toggle_rect.top, new_width, original_height)
+
+        # Create and position the reset button text
+        reset_toggle_text = font.render('RESET', True, config.LIGHT_GREY)
+        reset_toggle_rect.center = reset_toggle_rect.center  # Re-center the text in the new rect
+
+        # Draw the HOME button
+        pygame.draw.rect(screen, config.DARK_GREY, home_toggle_rect, border_radius=8)
+        # Calculate the top left position for the home text to be centered within its button
+        home_text_x = home_toggle_rect.x + (home_toggle_rect.width - home_toggle_text.get_width()) // 2
+        home_text_y = home_toggle_rect.y + (home_toggle_rect.height - home_toggle_text.get_height()) // 2
+        screen.blit(home_toggle_text, (home_text_x, home_text_y - 1))
+
+        # Draw the RESET button
+        pygame.draw.rect(screen, config.DARK_GREY, reset_toggle_rect, border_radius=8)
+        # Calculate the top left position for the reset text to be centered within its button
+        reset_text_x = reset_toggle_rect.x + (reset_toggle_rect.width - reset_toggle_text.get_width()) // 2
+        reset_text_y = reset_toggle_rect.y + (reset_toggle_rect.height - reset_toggle_text.get_height()) // 2
+        screen.blit(reset_toggle_text, (reset_text_x, reset_text_y - 1))
+
+        # Draw the "Probability Heat Map Display:" text
+        heat_map_text = font.render('Probability Heat Map Display:', True, config.SPECIAL_RED)
+        screen.blit(heat_map_text, (config.HEAT_MAP_OFFSET_X + 57, config.HEAT_MAP_OFFSET_Y - 114))
+
+        # Draw the heat map toggle
+        heat_map_toggle_text = font.render('ON' if display_heat_map else 'OFF', True, config.LIGHT_GREY)
+        heat_map_toggle_rect = heat_map_toggle_text.get_rect(center=(config.HEAT_MAP_OFFSET_X + 3 * config.GRID_WIDTH // 4 + 15, config.HEAT_MAP_OFFSET_Y - 102))
+        pygame.draw.rect(screen, config.DARK_GREY, heat_map_toggle_rect.inflate(20, 8), border_radius=8)  # Inflating the rect for visual padding
+        screen.blit(heat_map_toggle_text, (heat_map_toggle_rect.topleft[0], heat_map_toggle_rect.topleft[1] - 1))
 
         # Draw the "Shots Fired:" text
-        font.set_bold(True)
         shots_fired_text = font.render('Shots Fired:', True, config.BLACK)
         screen.blit(shots_fired_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 152))
 
         # Draw the "Ships Sunk:" text
-        font.set_bold(True)
         ships_sunk_text = font.render('Ships Sunk:', True, config.BLACK)
         screen.blit(ships_sunk_text, (config.GRID_OFFSET_X + 140, config.GRID_OFFSET_Y - 152))
 
-        # Draw the "Ships Left:" text
-        font.set_bold(True)
-        ships_left_text = font.render('Ships Left:', True, config.BLACK)
-        screen.blit(ships_left_text, (config.GRID_OFFSET_X + 280, config.GRID_OFFSET_Y - 152))
+        # Draw the "ESR Range:" text
+        esr_range_text = font.render('ESR Range:', True, config.BLACK)
+        screen.blit(esr_range_text, (config.GRID_OFFSET_X + 280, config.GRID_OFFSET_Y - 152))
 
         # Event handling
         for event in pygame.event.get():
@@ -245,8 +279,12 @@ def main(screen):
                         target_image = pygame.transform.scale(target_image, (new_width, new_height))
                         torpedo = 0
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if toggle_rect.collidepoint(event.pos):
+                if heat_map_toggle_rect.collidepoint(event.pos):
                     display_heat_map = not display_heat_map  # Toggle the heat map display
+                elif home_toggle_rect.collidepoint(event.pos):
+                    main_menu(screen)
+                elif reset_toggle_rect.collidepoint(event.pos):
+                    main(screen)
 
         # Draw heat map or quote image based on the toggle
         if display_heat_map:
