@@ -88,9 +88,6 @@ def generate_board(dim, ships, boards):
         m.append(random_number / boards)
         current += random_number
     random.shuffle(m)
-    print(m)
-    print(len(m))
-    print(sum(m))
     for i in range(dim):
         for j in range(dim):
             prob_0 = m[i*dim + j]
