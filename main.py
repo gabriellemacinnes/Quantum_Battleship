@@ -43,6 +43,61 @@ def get_prob(row):
         prob[k] = str(round(100 * prob[k]/shots))
     return prob
 
+def create_window(screen):
+    """Opens a modal window atop the game displaying some text."""
+    instructions_surface = pygame.Surface((1175, 500))
+    instructions_surface.fill(config.LIGHT_GREY)  # Set the background color
+    font = pygame.font.Font(None, 36)
+    text_lines = [
+        "Ahoy, Quantum Commander! Prepare to set sail on a mind-bending ",
+        "voyage through the fabric of spacetime as we engage in Quantum Battleship,",
+        "where uncertainty and strategy collide in an epic duel across the quantum realm.",
+        "Ready your fleet and navigate the uncertain waters of superposition as we embark on a journey ",
+        "that defies the laws of classical warfare!",
+        "Your mission, valiant commander, is to lay waste to a fleet of 10 enemy battleships", 
+        "using the enigmatic weaponry of classical and quantum cannons." ,
+        "Take heed, for these are not regular battleships. ",
+        "They exist in states of superposition across the vast ocean.",
+        "Use the space bar to toggle between classical cannons and enigmatic quantum cannons, "
+        "and press enter to unleash their fury.",
+        "Classical cannons, unveil the true nature of a single square",
+        "Quantum cannons shall illuminate the probabilities of four adjacent grid squares. ",
+        "Beware of the entangled battleships, for firing upon one shall unveil the destiny of its counterpart." ,
+        "To gain further insights, toggle the image on the right to reveal the ",
+        "intricate heat map of probabilities. ",
+        "Best of luck, intrepid commander,"
+        "may your valor and determination guide you to triumph on these tumultuous quantum seas. "
+        "Press any key to close this window and return to the game."
+    ]
+    text_y = 30
+
+    for line in text_lines:
+        text = font.render(line, True, config.DARK_GREY)
+        text_rect = text.get_rect(center=(instructions_surface.get_width() // 2, text_y))
+        instructions_surface.blit(text, text_rect)
+        text_y += 40
+
+    # Create a clock to control frame rate
+    clock = pygame.time.Clock()
+    is_open = True
+
+    while is_open:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                main_menu(screen)
+
+        screen.blit(instructions_surface, (20, 20))  # Position the window on the screen
+        pygame.display.flip()
+        clock.tick(60)
+
+    # Clear the window's contents
+    instructions_surface.fill(config.LIGHT_GREY)
+
+            
+
 def main_menu(screen):
     """Displays the main menu with custom buttons for starting the game or viewing instructions."""
     # Load images and sounds
@@ -82,9 +137,12 @@ def main_menu(screen):
             'color': config.DARK_GREY,
             'rect': pygame.Rect((config.SCREEN_WIDTH // 2 - button_size[0] // 2, button_y + button_size[1] + 10), button_size),
             'text': 'Instructions',
-            'action': lambda: print("Show instructions here."),  # Placeholder for instructions logic
+            'action': lambda: create_window(screen),  # Placeholder for instructions logic
         }
     }
+
+    
+
 
     # Initialize the clock for controlling frame rate
     clock = pygame.time.Clock()
